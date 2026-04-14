@@ -1,0 +1,81 @@
+spring:
+  profiles:
+    active: dev
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:mysql://localhost:3306/smart_note?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    username: root
+    password: 518048
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+  ai:
+    openai:
+      api-key: ${AI_API_KEY:sk-48d058d7e9124e278bf320489f607dd3}
+      base-url: ${AI_BASE_URL:https://api.deepseek.com}
+      chat:
+        options:
+          model: ${AI_MODEL:deepseek-chat}
+          temperature: 0.7
+      embedding:
+        enabled: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: com.javaweb.smartnote.entity
+
+jwt:
+  secret: "your-256-bit-secret-key-please-change-in-production"
+  expire-ms: 1209600000
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:mysql://prod-host:3306/smart_note?useSSL=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+  ai:
+    openai:
+      api-key: ${AI_API_KEY}
+      base-url: ${AI_BASE_URL}
+      chat:
+        options:
+          model: ${AI_MODEL}
+          temperature: 0.7
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  type-aliases-package: com.javaweb.smartnote.entity
+
+jwt:
+  secret: ${JWT_SECRET}
+  expire-ms: 1209600000
+
+springdoc:
+  swagger-ui:
+    enabled: false

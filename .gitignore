@@ -1,0 +1,35 @@
+# 在根目录创建 .gitignore（如果已有则追加）
+cat > .gitignore << EOF
+# 构建产物
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# 日志文件
+*.log
+backend/app.log
+
+# 依赖目录
+**/node_modules/
+
+# 操作系统生成文件
+.DS_Store
+Thumbs.db
+
+# IDE 配置（如 VSCode/IntelliJ）
+.vscode/
+.idea/
+*.iml
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 后端编译输出
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# 前端打包临时文件
+frontend/.vite/
+EOF

@@ -1,0 +1,6 @@
+技术栈要求：
+1. 项目采用jdk21版本
+2. 项目采用Maven作为构建工具
+3 数据库：MySQL推荐为5.7 版本,也可以使⽤8.0
+4 框架：SpringBoot 3.5.x 以上，Mybatis-Plus，Spring AI
+5
