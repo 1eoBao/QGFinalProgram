@@ -13,4 +13,5 @@ public class UserInfoResponse {
     private String avatar;
     private String motto;
     private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 }

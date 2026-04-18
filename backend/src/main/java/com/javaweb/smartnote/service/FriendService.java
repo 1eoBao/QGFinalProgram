@@ -3,6 +3,7 @@ package com.javaweb.smartnote.service;
 import com.javaweb.smartnote.dto.request.FriendApplyHandleRequest;
 import com.javaweb.smartnote.dto.request.FriendGroupCreateRequest;
 import com.javaweb.smartnote.dto.response.FriendApplyVO;
+import com.javaweb.smartnote.dto.response.FriendGroupVO;
 import com.javaweb.smartnote.dto.response.FriendVO;
 import com.javaweb.smartnote.dto.response.UserInfoResponse;
 
@@ -20,7 +21,11 @@ public interface FriendService {
 
     List<FriendVO> getFriendList(Long userId, Long groupId);
 
+    List<FriendGroupVO> getGroupList(Long userId);
+
     void createGroup(Long userId, FriendGroupCreateRequest request);
+
+    void deleteGroup(Long userId, Long groupId);
 
     void moveFriendToGroup(Long userId, Long friendId, Long groupId);
 

@@ -21,9 +21,12 @@ request.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response
       if (status === 401) {
-        localStorage.removeItem('token')
-        router.push('/login')
-        ElMessage.error('登录已过期，请重新登录')
+        const isPublicNoteApi = error.config.url?.includes('/note/public/')
+        if (!isPublicNoteApi) {
+          localStorage.removeItem('token')
+          router.push('/login')
+          ElMessage.error('登录已过期，请重新登录')
+        }
       } else {
         ElMessage.error(data?.msg || '请求失败')
       }

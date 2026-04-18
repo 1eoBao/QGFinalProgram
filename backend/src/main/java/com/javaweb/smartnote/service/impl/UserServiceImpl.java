@@ -144,6 +144,7 @@ public class UserServiceImpl implements UserService {
         resp.setAvatar(user.getAvatar());
         resp.setMotto(user.getMotto());
         resp.setCreateTime(user.getCreateTime());
+        resp.setUpdateTime(user.getUpdateTime());
         return resp;
     }
 }

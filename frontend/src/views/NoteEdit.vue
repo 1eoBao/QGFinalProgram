@@ -66,13 +66,21 @@ const rules = {
 
 async function loadNote() {
   if (!isEdit.value) return
-  const res = await getNoteDetail(route.params.id)
-  if (res.code === 200) {
-    form.title = res.data.title
-    form.content = res.data.content
-    form.permissionType = res.data.permissionType
-    form.targetUserIds = res.data.targetUserIds || []
-    isOwner.value = res.data.isOwner === true
+  try {
+    const res = await getNoteDetail(route.params.id)
+    if (res.code === 200) {
+      form.title = res.data.title
+      form.content = res.data.content
+      form.permissionType = res.data.permissionType
+      form.targetUserIds = res.data.targetUserIds || []
+      isOwner.value = res.data.isOwner === true
+    } else {
+      ElMessage.error(res.msg || '加载笔记失败')
+      router.back()
+    }
+  } catch (e) {
+    ElMessage.error('加载笔记失败')
+    router.back()
   }
 }
 
@@ -89,18 +97,23 @@ async function handleSave() {
   saving.value = true
   try {
     if (isEdit.value) {
-      await updateNote(route.params.id, { title: form.title, content: form.content })
-      if (isOwner.value) {
-        if (form.permissionType === 1 || form.permissionType === 2) {
-          await updateNotePermission(route.params.id, {
-            permissionType: form.permissionType,
-            targetUserIds: form.targetUserIds
-          })
-        } else {
-          await updateNotePermission(route.params.id, { permissionType: form.permissionType })
+      const res = await updateNote(route.params.id, { title: form.title, content: form.content })
+      if (res.code === 200) {
+        if (isOwner.value) {
+          if (form.permissionType === 1 || form.permissionType === 2) {
+            await updateNotePermission(route.params.id, {
+              permissionType: form.permissionType,
+              targetUserIds: form.targetUserIds
+            })
+          } else {
+            await updateNotePermission(route.params.id, { permissionType: form.permissionType })
+          }
         }
+        ElMessage.success('保存成功')
+        router.push('/notes')
+      } else {
+        ElMessage.error(res.msg || '保存失败')
       }
-      ElMessage.success('保存成功')
     } else {
       const res = await createNote({ title: form.title, content: form.content })
       if (res.code === 200) {
@@ -111,9 +124,13 @@ async function handleSave() {
           })
         }
         ElMessage.success('创建成功')
+        router.push('/notes')
+      } else {
+        ElMessage.error(res.msg || '创建失败')
       }
     }
-    router.push('/notes')
+  } catch (e) {
+    ElMessage.error('操作失败')
   } finally {
     saving.value = false
   }

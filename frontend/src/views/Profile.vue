@@ -19,10 +19,27 @@
               <el-input v-model="infoForm.nickname" placeholder="请输入昵称" />
             </el-form-item>
             <el-form-item label="头像">
-              <el-input v-model="infoForm.avatar" placeholder="头像URL" />
+              <div class="avatar-upload">
+                <el-upload
+                  class="avatar-uploader"
+                  :show-file-list="false"
+                  :before-upload="beforeAvatarUpload"
+                  :http-request="handleAvatarUpload"
+                >
+                  <img v-if="infoForm.avatar" :src="infoForm.avatar" class="avatar-preview" />
+                  <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+                </el-upload>
+                <div class="avatar-tip">支持 jpg、png、gif 格式，大小不超过 2MB</div>
+              </div>
             </el-form-item>
             <el-form-item label="座右铭">
               <el-input v-model="infoForm.motto" type="textarea" :rows="2" placeholder="一句话介绍自己" />
+            </el-form-item>
+            <el-form-item label="注册时间">
+              <span class="info-text">{{ formatTime(userStore.userInfo?.createTime) }}</span>
+            </el-form-item>
+            <el-form-item label="最后修改">
+              <span class="info-text">{{ formatTime(userStore.userInfo?.updateTime) }}</span>
             </el-form-item>
             <el-form-item>
               <el-button type="primary" :loading="savingInfo" @click="handleUpdateInfo">保存修改</el-button>
@@ -51,8 +68,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
-import { updateUserInfo, changePassword } from '../api/user'
+import { updateUserInfo, changePassword, uploadAvatar } from '../api/user'
 
 const userStore = useUserStore()
 const activeTab = ref('info')
@@ -87,6 +105,40 @@ onMounted(() => {
   }
 })
 
+function formatTime(t) {
+  if (!t) return '暂无'
+  return t.replace('T', ' ').substring(0, 16)
+}
+
+function beforeAvatarUpload(file) {
+  const isImage = ['image/jpeg', 'image/png', 'image/gif'].includes(file.type)
+  const isLt2M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传 jpg/png/gif 格式的图片')
+    return false
+  }
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 5MB')
+    return false
+  }
+  return true
+}
+
+async function handleAvatarUpload(options) {
+  try {
+    const res = await uploadAvatar(options.file)
+    if (res.code === 200) {
+      infoForm.avatar = res.data
+      ElMessage.success('头像上传成功')
+    } else {
+      ElMessage.error(res.msg || '上传失败')
+    }
+  } catch (e) {
+    ElMessage.error('上传失败，请稍后重试')
+  }
+}
+
 async function handleUpdateInfo() {
   savingInfo.value = true
   try {
@@ -94,7 +146,11 @@ async function handleUpdateInfo() {
     if (res.code === 200) {
       ElMessage.success('修改成功')
       userStore.fetchUserInfo()
+    } else {
+      ElMessage.error(res.msg || '修改失败')
     }
+  } catch (e) {
+    ElMessage.error('修改失败，请稍后重试')
   } finally {
     savingInfo.value = false
   }
@@ -110,7 +166,11 @@ async function handleChangePwd() {
       ElMessage.success('密码修改成功，请重新登录')
       userStore.clearToken()
       location.href = '/login'
+    } else {
+      ElMessage.error(res.msg || '修改失败')
     }
+  } catch (e) {
+    ElMessage.error('修改失败，请稍后重试')
   } finally {
     savingPwd.value = false
   }
@@ -134,5 +194,50 @@ async function handleChangePwd() {
   font-weight: 600;
   color: #303133;
   margin-bottom: 24px;
+}
+
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar-uploader {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.3s;
+}
+
+.avatar-uploader:hover {
+  border-color: #409eff;
+}
+
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+}
+
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-tip {
+  font-size: 12px;
+  color: #909399;
+}
+
+.info-text {
+  color: #606266;
 }
 </style>

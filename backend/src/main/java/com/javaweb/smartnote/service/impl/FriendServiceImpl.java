@@ -7,6 +7,7 @@ import com.javaweb.smartnote.common.ResultCodeEnum;
 import com.javaweb.smartnote.dto.request.FriendApplyHandleRequest;
 import com.javaweb.smartnote.dto.request.FriendGroupCreateRequest;
 import com.javaweb.smartnote.dto.response.FriendApplyVO;
+import com.javaweb.smartnote.dto.response.FriendGroupVO;
 import com.javaweb.smartnote.dto.response.FriendVO;
 import com.javaweb.smartnote.dto.response.UserInfoResponse;
 import com.javaweb.smartnote.entity.Friend;
@@ -190,6 +191,48 @@ public class FriendServiceImpl implements FriendService {
         group.setGroupName(request.getGroupName());
         friendGroupMapper.insert(group);
         log.info("好友分组创建: userId={}, groupName={}", userId, request.getGroupName());
+    }
+
+    @Override
+    public List<FriendGroupVO> getGroupList(Long userId) {
+        List<FriendGroup> groups = friendGroupMapper.selectList(
+                new LambdaQueryWrapper<FriendGroup>()
+                        .eq(FriendGroup::getUserId, userId)
+                        .orderByAsc(FriendGroup::getId));
+        return groups.stream().map(g -> {
+            FriendGroupVO vo = new FriendGroupVO();
+            vo.setId(g.getId());
+            vo.setGroupName(g.getGroupName());
+            return vo;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void deleteGroup(Long userId, Long groupId) {
+        FriendGroup group = friendGroupMapper.selectById(groupId);
+        if (group == null || !group.getUserId().equals(userId)) {
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND, "分组不存在");
+        }
+        if ("默认".equals(group.getGroupName())) {
+            throw new BusinessException(ResultCodeEnum.PARAM_ERROR, "不能删除默认分组");
+        }
+
+        FriendGroup defaultGroup = getOrCreateDefaultGroup(userId);
+
+        friendMapper.selectList(
+                new LambdaQueryWrapper<Friend>()
+                        .eq(Friend::getUserId, userId)
+                        .eq(Friend::getGroupId, groupId))
+                .forEach(f -> {
+                    Friend update = new Friend();
+                    update.setId(f.getId());
+                    update.setGroupId(defaultGroup.getId());
+                    friendMapper.updateById(update);
+                });
+
+        friendGroupMapper.deleteById(groupId);
+        log.info("好友分组删除: userId={}, groupId={}", userId, groupId);
     }
 
     // 移动好友到指定分组

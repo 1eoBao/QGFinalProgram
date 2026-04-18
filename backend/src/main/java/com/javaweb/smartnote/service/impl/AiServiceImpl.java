@@ -36,7 +36,7 @@ public class AiServiceImpl implements AiService {
             你是一个智能笔记助手。用户会给你一段笔记内容，请你按以下格式进行分析：
             
             【摘要】
-            用一段话概括笔记的核心内容（不超过200字）
+            用一段话概括笔记的核心内容（不超过200字），不要以第三人称叙述
             
             【要点】
             列出3-5个关键要点，每个要点一行，用数字编号
@@ -147,6 +147,14 @@ public class AiServiceImpl implements AiService {
         return Arrays.stream(raw.split("\n"))
                 .map(line -> line.replaceAll("^\\d+[.、)\\s]+", "").trim())
                 .filter(line -> !line.isEmpty())
+                .map(line -> {
+                    // 确保字符串是有效的JSON字符串（转义特殊字符）
+                    return line.replace("\"", "\\\"")
+                            .replace("\\", "\\\\")
+                            .replace("\n", "\\n")
+                            .replace("\r", "\\r")
+                            .replace("\t", "\\t");
+                })
                 .collect(Collectors.toList());
     }
 
@@ -158,6 +166,14 @@ public class AiServiceImpl implements AiService {
         return Arrays.stream(raw.split("[,，、\\s]+"))
                 .map(String::trim)
                 .filter(tag -> !tag.isEmpty())
+                .map(tag -> {
+                    // 确保字符串是有效的JSON字符串（转义特殊字符）
+                    return tag.replace("\"", "\\\"")
+                            .replace("\\", "\\\\")
+                            .replace("\n", "\\n")
+                            .replace("\r", "\\r")
+                            .replace("\t", "\\t");
+                })
                 .collect(Collectors.toList());
     }
 

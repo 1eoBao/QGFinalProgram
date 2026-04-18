@@ -77,7 +77,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getNoteDetail, deleteNote } from '../api/note'
+import { getPublicNote, deleteNote } from '../api/note'
 import { analyzeNote } from '../api/ai'
 
 const route = useRoute()
@@ -92,14 +92,20 @@ async function loadNote() {
   errorMsg.value = ''
   note.value = null
   try {
-    const res = await getNoteDetail(route.params.id)
+    const res = await getPublicNote(route.params.id)
     if (res.code === 200) {
       note.value = res.data
+    } else if (res.code === 401) {
+      errorMsg.value = '请先登录后查看此笔记'
     } else {
       errorMsg.value = res.msg || '加载笔记失败'
     }
   } catch (e) {
-    errorMsg.value = '无法连接服务器，请确认后端已启动'
+    if (e.response?.status === 401) {
+      errorMsg.value = '请先登录后查看此笔记'
+    } else {
+      errorMsg.value = '无法连接服务器，请确认后端已启动'
+    }
   } finally {
     loading.value = false
   }

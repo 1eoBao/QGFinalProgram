@@ -5,6 +5,7 @@ import com.javaweb.smartnote.common.UserContext;
 import com.javaweb.smartnote.dto.request.FriendApplyHandleRequest;
 import com.javaweb.smartnote.dto.request.FriendGroupCreateRequest;
 import com.javaweb.smartnote.dto.response.FriendApplyVO;
+import com.javaweb.smartnote.dto.response.FriendGroupVO;
 import com.javaweb.smartnote.dto.response.FriendVO;
 import com.javaweb.smartnote.dto.response.UserInfoResponse;
 import com.javaweb.smartnote.service.FriendService;
@@ -66,12 +67,29 @@ public class FriendController {
         return Result.success(friendService.getFriendList(userId, groupId));
     }
 
+    // 获取好友分组列表
+    @Operation(summary = "获取好友分组列表")
+    @GetMapping("/group/list")
+    public Result<List<FriendGroupVO>> getGroupList() {
+        Long userId = UserContext.getUserId();
+        return Result.success(friendService.getGroupList(userId));
+    }
+
     // 创建好友分组
     @Operation(summary = "创建好友分组")
     @PostMapping("/group")
     public Result<Void> createGroup(@Valid @RequestBody FriendGroupCreateRequest request) {
         Long userId = UserContext.getUserId();
         friendService.createGroup(userId, request);
+        return Result.success(null);
+    }
+
+    // 删除好友分组
+    @Operation(summary = "删除好友分组")
+    @DeleteMapping("/group/{id}")
+    public Result<Void> deleteGroup(@PathVariable Long id) {
+        Long userId = UserContext.getUserId();
+        friendService.deleteGroup(userId, id);
         return Result.success(null);
     }
 

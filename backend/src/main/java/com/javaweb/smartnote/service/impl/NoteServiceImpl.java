@@ -146,7 +146,7 @@ public class NoteServiceImpl implements NoteService {
 
         // 更新标签：先删后插
         if (request.getTagIds() != null) {
-            noteTagRelMapper.delete(new LambdaQueryWrapper<NoteTagRel>().eq(NoteTagRel::getNoteId, noteId));
+            noteTagRelMapper.deleteByNoteId(noteId);
             saveTagRelations(noteId, request.getTagIds());
         }
 
@@ -235,7 +235,7 @@ public class NoteServiceImpl implements NoteService {
         }
 
         // 所有者直接返回
-        if (note.getUserId().equals(currentUserId)) {
+        if (currentUserId != null && note.getUserId().equals(currentUserId)) {
             NoteDetailResponse resp = toDetailResponse(note, true);
             resp.setIsOwner(true);
             return resp;
@@ -248,18 +248,20 @@ public class NoteServiceImpl implements NoteService {
             return resp;
         }
 
-        // 非公开笔记：检查是否有权限记录
-        if (currentUserId != null) {
-            NotePermission perm = notePermissionMapper.selectOne(
-                    new LambdaQueryWrapper<NotePermission>()
-                            .eq(NotePermission::getNoteId, noteId)
-                            .eq(NotePermission::getTargetUserId, currentUserId));
-            if (perm != null) {
-                boolean canEdit = perm.getPermType() == Constants.PERM_TYPE_EDIT;
-                NoteDetailResponse resp = toDetailResponse(note, canEdit);
-                resp.setIsOwner(false);
-                return resp;
-            }
+        // 非公开笔记：必须登录且有权限记录
+        if (currentUserId == null) {
+            throw new BusinessException(ResultCodeEnum.UNAUTHORIZED, "请先登录");
+        }
+
+        NotePermission perm = notePermissionMapper.selectOne(
+                new LambdaQueryWrapper<NotePermission>()
+                        .eq(NotePermission::getNoteId, noteId)
+                        .eq(NotePermission::getTargetUserId, currentUserId));
+        if (perm != null) {
+            boolean canEdit = perm.getPermType() == Constants.PERM_TYPE_EDIT;
+            NoteDetailResponse resp = toDetailResponse(note, canEdit);
+            resp.setIsOwner(false);
+            return resp;
         }
 
         throw new BusinessException(ResultCodeEnum.FORBIDDEN, "无权查看此笔记");
@@ -329,7 +331,7 @@ public class NoteServiceImpl implements NoteService {
             NoteTagRel rel = new NoteTagRel();
             rel.setNoteId(noteId);
             rel.setTagId(tagId);
-            noteTagRelMapper.insert(rel);
+            noteTagRelMapper.insertIgnore(rel);
         }
     }
 
@@ -397,8 +399,7 @@ public class NoteServiceImpl implements NoteService {
 
     // 查询笔记关联的标签列表
     private List<NoteListResponse.TagVO> getTagsForNote(Long noteId) {
-        List<NoteTagRel> rels = noteTagRelMapper.selectList(
-                new LambdaQueryWrapper<NoteTagRel>().eq(NoteTagRel::getNoteId, noteId));
+        List<NoteTagRel> rels = noteTagRelMapper.selectByNoteId(noteId);
         if (rels.isEmpty()) {
             return Collections.emptyList();
         }

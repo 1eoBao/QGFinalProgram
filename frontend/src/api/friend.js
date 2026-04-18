@@ -20,8 +20,16 @@ export function getFriendList(groupId) {
   return request.get('/friend/list', { params: { groupId } })
 }
 
+export function getFriendGroups() {
+  return request.get('/friend/group/list')
+}
+
 export function createFriendGroup(data) {
   return request.post('/friend/group', data)
+}
+
+export function deleteFriendGroup(id) {
+  return request.delete(`/friend/group/${id}`)
 }
 
 export function moveFriendToGroup(friendId, groupId) {

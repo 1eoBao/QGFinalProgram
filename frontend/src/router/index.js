@@ -35,7 +35,10 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
-  if (to.path !== '/login' && to.path !== '/register' && !token) {
+  const publicPages = ['/login', '/register']
+  const isNoteDetail = to.path.startsWith('/note/') && !to.path.endsWith('/edit') && !to.path.endsWith('/create')
+  
+  if (!publicPages.includes(to.path) && !isNoteDetail && !token) {
     next('/login')
   } else {
     next()

@@ -7,6 +7,7 @@
             <el-option v-for="g in groups" :key="g.id" :label="g.groupName" :value="g.id" />
           </el-select>
           <el-button type="primary" size="small" @click="showGroupDialog = true">新建分组</el-button>
+          <el-button size="small" @click="showManageGroupDialog = true">管理分组</el-button>
         </div>
         <el-empty v-if="friends.length === 0" description="暂无好友" />
         <div class="friend-grid">
@@ -78,13 +79,23 @@
         <el-button type="primary" @click="handleCreateGroup">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="showManageGroupDialog" title="管理好友分组" width="400px">
+      <div class="group-list">
+        <div v-for="g in groups" :key="g.id" class="group-item">
+          <span>{{ g.groupName }}</span>
+          <el-button v-if="g.groupName !== '默认'" type="danger" text size="small" @click="handleDeleteGroup(g.id)">删除</el-button>
+          <el-tag v-else type="info" size="small">不可删除</el-tag>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { searchUser, sendFriendApply, handleFriendApply, getFriendApplyList, getFriendList, createFriendGroup, moveFriendToGroup } from '../api/friend'
+import { searchUser, sendFriendApply, handleFriendApply, getFriendApplyList, getFriendList, getFriendGroups, createFriendGroup, deleteFriendGroup, moveFriendToGroup } from '../api/friend'
 
 const activeTab = ref('list')
 const friends = ref([])
@@ -95,12 +106,20 @@ const searching = ref(false)
 const searchResults = ref([])
 const applyList = ref([])
 const showGroupDialog = ref(false)
+const showManageGroupDialog = ref(false)
 const newGroupName = ref('')
 
 async function loadFriends() {
   const res = await getFriendList(groupId.value || undefined)
   if (res.code === 200) {
     friends.value = res.data
+  }
+}
+
+async function loadGroups() {
+  const res = await getFriendGroups()
+  if (res.code === 200) {
+    groups.value = res.data
   }
 }
 
@@ -147,6 +166,22 @@ async function handleCreateGroup() {
     ElMessage.success('分组创建成功')
     showGroupDialog.value = false
     newGroupName.value = ''
+    loadGroups()
+  }
+}
+
+async function handleDeleteGroup(id) {
+  try {
+    const res = await deleteFriendGroup(id)
+    if (res.code === 200) {
+      ElMessage.success('分组删除成功')
+      loadGroups()
+      loadFriends()
+    } else {
+      ElMessage.error(res.msg || '删除失败')
+    }
+  } catch (e) {
+    ElMessage.error('删除失败')
   }
 }
 
@@ -168,6 +203,7 @@ function formatTime(t) {
 
 onMounted(() => {
   loadFriends()
+  loadGroups()
   loadApplies()
 })
 </script>
@@ -293,5 +329,20 @@ onMounted(() => {
 .apply-actions {
   display: flex;
   gap: 8px;
+}
+
+.group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
 }
 </style>
