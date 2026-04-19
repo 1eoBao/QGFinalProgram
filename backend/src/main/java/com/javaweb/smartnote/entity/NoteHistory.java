@@ -13,6 +13,6 @@ public class NoteHistory {
     private Long userId;
     private Long noteId;
 
-    @TableField(fill = FieldFill.INSERT)
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime viewTime;
 }

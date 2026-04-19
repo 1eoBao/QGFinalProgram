@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -236,6 +237,7 @@ public class NoteServiceImpl implements NoteService {
 
         // 所有者直接返回
         if (currentUserId != null && note.getUserId().equals(currentUserId)) {
+            recordViewHistory(currentUserId, noteId);
             NoteDetailResponse resp = toDetailResponse(note, true);
             resp.setIsOwner(true);
             return resp;
@@ -243,6 +245,9 @@ public class NoteServiceImpl implements NoteService {
 
         // 公开笔记：不可编辑
         if (note.getPermissionType() == Constants.PERM_PUBLIC) {
+            if (currentUserId != null) {
+                recordViewHistory(currentUserId, noteId);
+            }
             NoteDetailResponse resp = toDetailResponse(note, false);
             resp.setIsOwner(false);
             return resp;
@@ -258,6 +263,7 @@ public class NoteServiceImpl implements NoteService {
                         .eq(NotePermission::getNoteId, noteId)
                         .eq(NotePermission::getTargetUserId, currentUserId));
         if (perm != null) {
+            recordViewHistory(currentUserId, noteId);
             boolean canEdit = perm.getPermType() == Constants.PERM_TYPE_EDIT;
             NoteDetailResponse resp = toDetailResponse(note, canEdit);
             resp.setIsOwner(false);
@@ -310,15 +316,24 @@ public class NoteServiceImpl implements NoteService {
         return perm != null;
     }
 
-    // 记录浏览历史
+    // 记录浏览历史：已存在则更新时间，不存在则插入
     private void recordViewHistory(Long userId, Long noteId) {
-        try {
+        NoteHistory existing = noteHistoryMapper.selectOne(
+                new LambdaQueryWrapper<NoteHistory>()
+                        .eq(NoteHistory::getUserId, userId)
+                        .eq(NoteHistory::getNoteId, noteId));
+
+        if (existing != null) {
+            NoteHistory update = new NoteHistory();
+            update.setId(existing.getId());
+            update.setViewTime(LocalDateTime.now());
+            noteHistoryMapper.updateById(update);
+        } else {
             NoteHistory history = new NoteHistory();
             history.setUserId(userId);
             history.setNoteId(noteId);
+            history.setViewTime(LocalDateTime.now());
             noteHistoryMapper.insert(history);
-        } catch (Exception e) {
-            log.debug("浏览历史记录已存在，跳过: userId={}, noteId={}", userId, noteId);
         }
     }
 

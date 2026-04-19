@@ -37,6 +37,7 @@ public class MybatisPlusConfig {
             public void updateFill(MetaObject metaObject) {
                 this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
                 this.strictUpdateFill(metaObject, "lastEditTime", LocalDateTime.class, LocalDateTime.now());
+                this.strictUpdateFill(metaObject, "viewTime", LocalDateTime.class, LocalDateTime.now());
             }
         };
     }
